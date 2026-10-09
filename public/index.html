@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Gmail</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar" aria-label="Accounts and folders"></aside>
+    <section id="list-pane" aria-label="Messages"></section>
+    <section id="read-pane" aria-label="Conversation"></section>
+  </div>
+  <aside id="chat" aria-label="Ask Claude" hidden></aside>
+  <button id="chat-toggle" type="button" aria-label="Ask Claude">Ask Claude</button>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="dialog"></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
