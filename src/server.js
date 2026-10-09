@@ -7,7 +7,7 @@ import { loadConfig } from './config.js';
 import { AccountStore } from './store.js';
 import { MailService, ServiceError, VIEWS } from './service.js';
 import { Assistant, ClaudeError } from './claude.js';
-import { AuthError } from './google-auth.js';
+import { AuthError, GoogleClientError } from './google-auth.js';
 import { GmailError } from './gmail.js';
 import { InvalidMailError } from './mime.js';
 
@@ -71,7 +71,7 @@ const parse = (schema, data) => {
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 function errorStatus(err) {
-  if (err instanceof HttpError || err instanceof ServiceError || err instanceof ClaudeError || err instanceof InvalidMailError) return [err.status, err.code, err.message];
+  if (err instanceof HttpError || err instanceof ServiceError || err instanceof ClaudeError || err instanceof InvalidMailError || err instanceof GoogleClientError) return [err.status, err.code, err.message];
   if (err instanceof AuthError) return [401, 'reauth_required', err.message];
   if (err instanceof GmailError) return [[404, 403, 429].includes(err.status) ? err.status : 502, 'gmail_error', err.message];
   return [500, 'internal', 'Something went wrong on the server'];

@@ -9,6 +9,8 @@
   },
   "scripts": {
     "start": "node src/server.js",
+    "setup": "node src/setup.js",
+    "doctor": "node src/doctor.js",
     "demo": "node scripts/demo.js",
     "mcp": "node src/mcp.js",
     "test": "node --test \"test/**/*.test.js\""

@@ -268,6 +268,9 @@ export function createFakeGoogle({ port = 0, verifyPkce = true } = {}) {
       if (url.pathname === '/token' && req.method === 'POST') {
         state.tokenRequests++;
         const p = new URLSearchParams(await readBody(req));
+        if (p.get('client_id') !== 'fake-client' || p.get('client_secret') !== 'fake-secret') {
+          return json(res, 401, { error: 'invalid_client', error_description: 'The OAuth client was not found.' }); // same shape the real endpoint returns
+        }
         if (p.get('grant_type') === 'authorization_code') {
           const c = codes.get(p.get('code'));
           codes.delete(p.get('code'));

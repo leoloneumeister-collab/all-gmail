@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // .env is optional. Real environment variables win over the file.
+export const ENV_FILE = process.env.ALL_GMAIL_ENV_FILE || path.join(root, '.env');
 try {
-  process.loadEnvFile(path.join(root, '.env'));
+  process.loadEnvFile(ENV_FILE);
 } catch {}
 
 export function loadConfig(env = process.env) {

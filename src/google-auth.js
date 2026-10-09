@@ -9,6 +9,16 @@ export class AuthError extends Error {
   }
 }
 
+/** Google does not know this client ID, or the secret does not match it. */
+export class GoogleClientError extends Error {
+  constructor(detail) {
+    super(`Google rejected GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (${detail}). Check them in .env, or run: npm run doctor`);
+    this.name = 'GoogleClientError';
+    this.status = 502;
+    this.code = 'bad_google_client';
+  }
+}
+
 const b64url = (buf) => buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const STATE_TTL_MS = 10 * 60 * 1000;
 
@@ -70,9 +80,33 @@ export class GoogleAuth {
       if (data.error === 'invalid_grant') {
         throw new AuthError('Google no longer accepts this login. Reconnect the account.');
       }
+      if (data.error === 'invalid_client') throw new GoogleClientError(data.error_description || 'invalid_client');
       throw new Error(`Google token endpoint: ${data.error_description || data.error || res.status}`);
     }
     return data;
+  }
+
+  /**
+   * Asks Google whether the client ID and secret are real, without needing a login.
+   * A valid client answers "invalid_grant" to a made-up code; a wrong one answers "invalid_client".
+   */
+  async probeClient() {
+    const res = await this.fetch(this.cfg.tokenUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: this.cfg.clientId,
+        client_secret: this.cfg.clientSecret,
+        grant_type: 'authorization_code',
+        code: 'all-gmail-doctor-probe',
+        code_verifier: 'x'.repeat(64),
+        redirect_uri: this.redirectUri,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.error === 'invalid_client') return { ok: false, reason: data.error_description || 'invalid_client' };
+    if (data.error === 'invalid_grant') return { ok: true };
+    return { ok: null, reason: `unexpected answer: HTTP ${res.status} ${data.error ?? ''} ${data.error_description ?? ''}`.trim() };
   }
 
   exchangeCode(code, verifier) {

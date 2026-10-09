@@ -26,6 +26,8 @@ Opens a fake Google with three sample mailboxes. Nothing touches real Gmail. Add
 
 ## Setup for your real accounts
 
+Short version: do step 1 in the Google console, then run `npm run setup`. It asks for the client ID, secret and (optionally) your Anthropic key, writes `.env` readable only by you, checks everything against Google and Anthropic, and starts the app. Run `npm run doctor` any time something stops working; it tells you what is wrong and how to fix it.
+
 ### 1. Google setup (once, about 5 minutes)
 
 Google only lets apps read Gmail after you create your own OAuth client. It's free.
@@ -37,27 +39,25 @@ Google only lets apps read Gmail after you create your own OAuth client. It's fr
 5. **Publish the app** (Audience > *Publish app* so the status is **In production**). **Do not skip this.** In "Testing" status Google expires your login every 7 days ([Google docs](https://developers.google.com/identity/protocols/oauth2)) and you would have to reconnect all accounts weekly. Publishing a personal app does not require a review. You'll see an "unverified app" warning on login; click *Advanced*, then *Go to ... (unsafe)*. That's expected for your own app.
 6. **Clients > Create client**, type **Desktop app**. Copy the client ID and secret.
 
-```bash
-cp .env.example .env
-# put GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET into .env
-```
-
 If Google complains about `redirect_uri_mismatch`, create the client as **Web application** instead and add `http://127.0.0.1:8787/auth/callback` as an authorized redirect URI.
 
 Google Workspace accounts (a company or school address): the admin can block third-party apps. If login is refused, that's why.
 
 ### 2. Claude
 
-Put `ANTHROPIC_API_KEY=...` in `.env` (key from <https://console.anthropic.com>). Default model is `claude-opus-5-5`, change it with `CLAUDE_MODEL`. Server-side refusal fallback is on by default; set `CLAUDE_FALLBACKS=0` to turn it off.
+An API key from <https://console.anthropic.com> (`npm run setup` asks for it, or put `ANTHROPIC_API_KEY=...` in `.env`). Mail works without it; only the Claude features need it. Default model is `claude-opus-5-5`, change it with `CLAUDE_MODEL`. Server-side refusal fallback is on by default; set `CLAUDE_FALLBACKS=0` to turn it off.
 
 ### 3. Run
 
 ```bash
 npm install
-npm start
+npm run setup     # first time: asks for keys, checks them, starts the app
+npm start         # afterwards
 ```
 
-Open <http://127.0.0.1:8787>, click **+ Add** and sign in with each Gmail account. Rename them ("Work", "Personal", "Studio") with the gear icon and pick colors.
+Open <http://127.0.0.1:8787>, click **+ Add** and sign in with each Gmail account (pick the account in Google's window; it is a new login each time). Rename them ("Work", "Personal", "Studio") with the gear icon and pick colors.
+
+Behind a company proxy? Start with `NODE_USE_ENV_PROXY=1 npm start`.
 
 ## Use all accounts from Claude Desktop or Claude Code (MCP)
 
@@ -93,8 +93,9 @@ Then ask things like "what needs an answer across all my inboxes?" or "draft a r
 
 ## Honest status
 
-- 61 automated tests pass (`npm test`), and the UI was driven in a real browser (desktop and phone width) against a fake Google with a scripted fake Claude.
-- **Not tested against live services**: real Google login, real Gmail and the real Claude API. They were not reachable where this was built. The Google and Claude request shapes follow the official docs, but expect to fix a small thing or two on the very first real run.
+- 70 automated tests pass (`npm test`), and the UI was driven in a real browser (desktop and phone width) against a fake Google with a scripted fake Claude.
+- **Checked against the live services**: the token endpoint, the Gmail API's error shape and the Anthropic API's key check were hit for real (with deliberately wrong credentials) and are reported correctly by `npm run doctor`.
+- **Not tested with a real login**: signing in to a real Google account, reading real mail, and real Claude answers. That needs your credentials. The request shapes follow the official docs, but expect to fix a small thing or two on the very first real run, and tell me what the doctor or the app says.
 
 ## Layout
 
@@ -108,6 +109,8 @@ src/tools.js      the tools Claude may use (shared by chat and MCP)
 src/render.js     turns untrusted mail into safe prompt text
 src/server.js     local web server and security checks
 src/mcp.js        MCP server (stdio)
+src/setup.js      npm run setup (guided first run)
+src/doctor.js     npm run doctor (checks keys, accounts, port)
 public/           the UI, plain JS, no build step
 scripts/          fake Google for tests and the demo
 ```
